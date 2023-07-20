@@ -28,6 +28,7 @@ async fn axum(
         .route("/env", get(environment))
         .route("/services", get(services))
         .route("/services/:code", get(service))
+        .route("/services/:code/:attribute", get(attribute))
         .with_state(Arc::new(state));
 
     Ok(router.into())
@@ -50,5 +51,14 @@ async fn service(
     Path(code): Path<String>,
 ) -> Json<Vec<String>> {
     let service = state.pricing().service(code).await;
+    Json(service)
+}
+
+#[axum::debug_handler]
+async fn attribute(
+    State(state): State<Arc<state::State>>,
+    Path((code, attribute)): Path<(String, String)>,
+) -> Json<Vec<String>> {
+    let service = state.pricing().attribute(code, attribute).await;
     Json(service)
 }
