@@ -24,12 +24,16 @@ impl AwsPricingClient {
         Self { client }
     }
 
-    pub async fn services(&self) -> Vec<String> {
+    pub async fn services(&self) -> HashMap<String, Vec<String>> {
         self.describe_services_impl(None)
             .await
             .unwrap_or_default()
             .into_iter()
-            .filter_map(|service| service.service_code)
+            .filter_map(|service| {
+                service
+                    .service_code
+                    .map(|code| (code, service.attribute_names.unwrap_or_default()))
+            })
             .collect()
     }
 

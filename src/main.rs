@@ -37,7 +37,7 @@ async fn environment() -> Json<HashMap<String, String>> {
 }
 
 #[axum::debug_handler]
-async fn services(State(state): State<Arc<state::State>>) -> Json<Vec<String>> {
+async fn services(State(state): State<Arc<state::State>>) -> Json<HashMap<String, Vec<String>>> {
     let services = state.pricing().services().await;
     Json(services)
 }
