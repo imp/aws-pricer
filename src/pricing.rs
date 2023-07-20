@@ -37,6 +37,15 @@ impl AwsPricingClient {
             .collect()
     }
 
+    pub async fn service(&self, code: String) -> Vec<String> {
+        self.describe_services_impl(Some(code))
+            .await
+            .unwrap_or_default()
+            .pop()
+            .and_then(|service| service.attribute_names)
+            .unwrap_or_default()
+    }
+
     async fn describe_services_impl(
         &self,
         service_code: Option<String>,

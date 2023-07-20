@@ -2,6 +2,7 @@ use std::collections::HashMap;
 use std::env;
 use std::sync::Arc;
 
+use axum::extract::Path;
 use axum::extract::State;
 use axum::Json;
 use axum::{routing::get, Router};
@@ -26,6 +27,7 @@ async fn axum(
         .route("/", get(hello_world))
         .route("/env", get(environment))
         .route("/services", get(services))
+        .route("/services/:code", get(service))
         .with_state(Arc::new(state));
 
     Ok(router.into())
@@ -40,4 +42,13 @@ async fn environment() -> Json<HashMap<String, String>> {
 async fn services(State(state): State<Arc<state::State>>) -> Json<HashMap<String, Vec<String>>> {
     let services = state.pricing().services().await;
     Json(services)
+}
+
+#[axum::debug_handler]
+async fn service(
+    State(state): State<Arc<state::State>>,
+    Path(code): Path<String>,
+) -> Json<Vec<String>> {
+    let service = state.pricing().service(code).await;
+    Json(service)
 }
