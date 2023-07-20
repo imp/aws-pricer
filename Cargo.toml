@@ -4,8 +4,13 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-axum = "0.6"
+aws-credential-types = "0.55"
+aws-types = "0.55"
+aws-config = "0.55"
+aws-sdk-pricing = "0.28"
+axum = { version = "0.6", features = ["macros"] }
 shuttle-axum = "0.21"
 shuttle-runtime = "0.21"
 shuttle-secrets = "0.21"
 tokio = "1.28"
+tokio-stream = "0.1"
