@@ -4,6 +4,8 @@ use std::sync::Arc;
 
 use axum::extract::Path;
 use axum::extract::State;
+use axum::response::Html;
+use axum::response::IntoResponse;
 use axum::Json;
 use axum::{routing::get, Router};
 
@@ -13,10 +15,6 @@ mod credentials;
 mod pricing;
 mod state;
 
-async fn hello_world() -> &'static str {
-    "Hello, world!"
-}
-
 #[shuttle_runtime::main]
 async fn axum(
     #[shuttle_secrets::Secrets] shuttle_secrets: shuttle_secrets::SecretStore,
@@ -24,7 +22,7 @@ async fn axum(
     let pricing = pricing::AwsPricingClient::new(shuttle_secrets).await;
     let state = state::State::new(pricing).await;
     let router = Router::new()
-        .route("/", get(hello_world))
+        .route("/", get(index))
         .route("/env", get(environment))
         .route("/services", get(services))
         .route("/services/:code", get(service))
@@ -34,6 +32,12 @@ async fn axum(
     Ok(router.into())
 }
 
+#[axum::debug_handler]
+async fn index() -> impl IntoResponse {
+    Html(include_str!("assets/index.html"))
+}
+
+#[axum::debug_handler]
 async fn environment() -> Json<HashMap<String, String>> {
     let env = env::vars().collect();
     Json(env)
