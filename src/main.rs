@@ -2,16 +2,15 @@ use std::collections::HashMap;
 use std::env;
 use std::sync::Arc;
 
-use axum::extract::Path;
-use axum::extract::State;
-use axum::response::Html;
-use axum::response::IntoResponse;
+use axum::extract::{Path, Query, State};
+use axum::response::{Html, IntoResponse, Response};
 use axum::Json;
 use axum::{routing::get, Router};
 
 use credentials::ShuttleSecretsAwsCredentials;
 
 mod credentials;
+mod params;
 mod pricing;
 mod state;
 
@@ -38,9 +37,13 @@ async fn index() -> impl IntoResponse {
 }
 
 #[axum::debug_handler]
-async fn environment() -> Json<HashMap<String, String>> {
-    let env = env::vars().collect();
-    Json(env)
+async fn environment(Query(params): Query<params::Params>) -> Response {
+    let env = env::vars().collect::<HashMap<String, String>>();
+    if params.is_html() {
+        format!("{env:#?}").into_response()
+    } else {
+        Json(env).into_response()
+    }
 }
 
 #[axum::debug_handler]
