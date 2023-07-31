@@ -6,6 +6,7 @@ use axum::extract::{Path, Query, State};
 use axum::response::{Html, IntoResponse, Response};
 use axum::Json;
 use axum::{routing::get, Router};
+use serde_json as json;
 
 use credentials::ShuttleSecretsAwsCredentials;
 
@@ -26,6 +27,7 @@ async fn axum(
         .route("/services", get(services))
         .route("/services/:code", get(service))
         .route("/services/:code/:attribute", get(attribute))
+        .route("/products/:code", get(products))
         .with_state(Arc::new(state));
 
     Ok(router.into())
@@ -68,4 +70,13 @@ async fn attribute(
 ) -> Json<Vec<String>> {
     let service = state.pricing().attribute(code, attribute).await;
     Json(service)
+}
+
+#[axum::debug_handler]
+async fn products(
+    State(state): State<Arc<state::State>>,
+    Path(code): Path<String>,
+) -> Json<Vec<json::Value>> {
+    let products = state.pricing().products(code).await;
+    Json(products)
 }

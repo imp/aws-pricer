@@ -179,6 +179,7 @@ dependencies = [
  "aws-types",
  "axum",
  "serde",
+ "serde_json",
  "shuttle-axum",
  "shuttle-runtime",
  "shuttle-secrets",

@@ -52,6 +52,15 @@ impl AwsPricingClient {
             .unwrap_or_default()
     }
 
+    pub async fn products(&self, code: String) -> Vec<json::Value> {
+        self.get_products(code)
+            .await
+            .unwrap_or_default()
+            .into_iter()
+            .filter_map(|text| json::from_str(&text).ok())
+            .collect()
+    }
+
     async fn describe_services_impl(
         &self,
         service_code: Option<String>,
@@ -71,7 +80,7 @@ impl AwsPricingClient {
         Ok(services)
     }
 
-    pub async fn attribute_values(
+    async fn attribute_values(
         &self,
         code: String,
         attribute: String,
@@ -90,5 +99,18 @@ impl AwsPricingClient {
             .filter_map(|value| value.value)
             .collect();
         Ok(values)
+    }
+
+    async fn get_products(&self, code: String) -> PricingResult<Vec<String>> {
+        let prices = self
+            .client
+            .get_products()
+            .service_code(code)
+            .into_paginator()
+            .items()
+            .send()
+            .collect::<Result<Vec<_>, _>>()
+            .await?;
+        Ok(prices)
     }
 }
