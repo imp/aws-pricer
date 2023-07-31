@@ -52,8 +52,13 @@ impl AwsPricingClient {
             .unwrap_or_default()
     }
 
-    pub async fn products(&self, code: String) -> Vec<json::Value> {
-        self.get_products(code)
+    pub async fn products(
+        &self,
+        code: String,
+        attributes: HashMap<String, String>,
+    ) -> Vec<json::Value> {
+        let filters = attributes.into_iter().map(filter).collect();
+        self.get_products(code, filters)
             .await
             .unwrap_or_default()
             .into_iter()
@@ -101,11 +106,16 @@ impl AwsPricingClient {
         Ok(values)
     }
 
-    async fn get_products(&self, code: String) -> PricingResult<Vec<String>> {
+    async fn get_products(
+        &self,
+        code: String,
+        filters: Vec<pricing::types::Filter>,
+    ) -> PricingResult<Vec<String>> {
         let prices = self
             .client
             .get_products()
             .service_code(code)
+            .set_filters(Some(filters))
             .into_paginator()
             .items()
             .send()
@@ -113,4 +123,12 @@ impl AwsPricingClient {
             .await?;
         Ok(prices)
     }
+}
+
+fn filter((field, value): (String, String)) -> pricing::types::Filter {
+    pricing::types::Filter::builder()
+        .r#type(pricing::types::FilterType::TermMatch)
+        .field(field)
+        .value(value)
+        .build()
 }

@@ -21,14 +21,19 @@ async fn axum(
 ) -> shuttle_axum::ShuttleAxum {
     let pricing = pricing::AwsPricingClient::new(shuttle_secrets).await;
     let state = state::State::new(pricing).await;
+    let state = Arc::new(state);
+    let load = state.clone();
+    tokio::spawn(async move { load.load_services().await });
     let router = Router::new()
         .route("/", get(index))
+        .route("/codes", get(codes))
+        .route("/stats", get(stats))
         .route("/env", get(environment))
         .route("/services", get(services))
         .route("/services/:code", get(service))
         .route("/services/:code/:attribute", get(attribute))
         .route("/products/:code", get(products))
-        .with_state(Arc::new(state));
+        .with_state(state);
 
     Ok(router.into())
 }
@@ -36,6 +41,16 @@ async fn axum(
 #[axum::debug_handler]
 async fn index() -> impl IntoResponse {
     Html(include_str!("assets/index.html"))
+}
+
+#[axum::debug_handler]
+async fn stats(State(state): State<Arc<state::State>>) -> Json<json::Value> {
+    Json(state.load_duration().await)
+}
+
+#[axum::debug_handler]
+async fn codes(State(state): State<Arc<state::State>>) -> Json<json::Value> {
+    Json(state.codes().await)
 }
 
 #[axum::debug_handler]
@@ -76,7 +91,8 @@ async fn attribute(
 async fn products(
     State(state): State<Arc<state::State>>,
     Path(code): Path<String>,
+    Query(attributes): Query<HashMap<String, String>>,
 ) -> Json<Vec<json::Value>> {
-    let products = state.pricing().products(code).await;
+    let products = state.pricing().products(code, attributes).await;
     Json(products)
 }
