@@ -6,7 +6,7 @@ use super::*;
 #[derive(Debug)]
 pub struct State {
     client: pricing::AwsPricingClient,
-    services: Mutex<HashMap<String, HashMap<String, Vec<String>>>>,
+    services: Mutex<HashMap<String, types::Service>>,
     load_duration: Mutex<HashMap<String, time::Duration>>,
 }
 
@@ -25,6 +25,42 @@ impl State {
         &self.client
     }
 
+    pub(crate) async fn services(&self) -> Vec<types::Service> {
+        self.pricing()
+            .services()
+            .await
+            .into_iter()
+            .map(types::Service::from)
+            .collect()
+    }
+
+    pub(crate) async fn service(&self, code: String) -> Option<types::Service> {
+        self.pricing().service(code).await.map(types::Service::from)
+    }
+
+    pub(crate) async fn fill_attribute_values(&self, service: types::Service) -> types::Service {
+        let mut attributes = Vec::with_capacity(service.attributes.len());
+        for attribute in service.attributes {
+            let attribute = self.attribute(service.code.clone(), attribute.name).await;
+            attributes.push(attribute);
+        }
+        types::Service {
+            attributes,
+            ..service
+        }
+    }
+
+    pub(crate) async fn attribute(&self, code: String, attribute: String) -> types::Attribute {
+        let values = self
+            .pricing()
+            .attribute(code, attribute.clone())
+            .await
+            .into_iter()
+            .filter_map(|value| value.value)
+            .collect();
+        types::Attribute::new(attribute).with_values(values)
+    }
+
     pub async fn codes(&self) -> json::Value {
         let services = self.services.lock().await;
         json::to_value(&*services).unwrap_or_default()
@@ -36,18 +72,17 @@ impl State {
     }
 
     pub async fn load_services(&self) {
-        for (code, attributes) in self.client.services().await {
+        for service in self.services().await {
             let now = time::Instant::now();
-            let mut service = HashMap::new();
-            for attribute in attributes {
-                let values = self.client.attribute(code.clone(), attribute.clone()).await;
-                service.insert(attribute, values);
-            }
+            let service = self.fill_attribute_values(service).await;
             self.load_duration
                 .lock()
                 .await
-                .insert(code.clone(), now.elapsed());
-            self.services.lock().await.insert(code, service);
+                .insert(service.code.clone(), now.elapsed());
+            self.services
+                .lock()
+                .await
+                .insert(service.code.clone(), service);
         }
     }
 }

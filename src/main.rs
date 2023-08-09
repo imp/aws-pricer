@@ -2,18 +2,21 @@ use std::collections::HashMap;
 use std::env;
 use std::sync::Arc;
 
-use axum::extract::{Path, Query, State};
+use axum::extract::{Extension, Path, Query, State};
 use axum::response::{Html, IntoResponse, Response};
 use axum::Json;
 use axum::{routing::get, Router};
+use serde::{Deserialize, Serialize};
 use serde_json as json;
 
 use credentials::ShuttleSecretsAwsCredentials;
 
 mod credentials;
+mod gql;
 mod params;
 mod pricing;
 mod state;
+mod types;
 
 #[shuttle_runtime::main]
 async fn axum(
@@ -24,8 +27,15 @@ async fn axum(
     let state = Arc::new(state);
     let load = state.clone();
     tokio::spawn(async move { load.load_services().await });
+    let schema = gql::schema(state.clone());
     let router = Router::new()
         .route("/", get(index))
+        .route(
+            "/graphql",
+            get(gql::graphiql)
+                .post(gql::graphql)
+                .layer(Extension(schema)),
+        )
         .route("/codes", get(codes))
         .route("/stats", get(stats))
         .route("/env", get(environment))
@@ -64,8 +74,8 @@ async fn environment(Query(params): Query<params::Params>) -> Response {
 }
 
 #[axum::debug_handler]
-async fn services(State(state): State<Arc<state::State>>) -> Json<HashMap<String, Vec<String>>> {
-    let services = state.pricing().services().await;
+async fn services(State(state): State<Arc<state::State>>) -> Json<Vec<types::Service>> {
+    let services = state.services().await;
     Json(services)
 }
 
@@ -73,8 +83,8 @@ async fn services(State(state): State<Arc<state::State>>) -> Json<HashMap<String
 async fn service(
     State(state): State<Arc<state::State>>,
     Path(code): Path<String>,
-) -> Json<Vec<String>> {
-    let service = state.pricing().service(code).await;
+) -> Json<Option<types::Service>> {
+    let service = state.service(code).await;
     Json(service)
 }
 
@@ -82,9 +92,9 @@ async fn service(
 async fn attribute(
     State(state): State<Arc<state::State>>,
     Path((code, attribute)): Path<(String, String)>,
-) -> Json<Vec<String>> {
-    let service = state.pricing().attribute(code, attribute).await;
-    Json(service)
+) -> Json<types::Attribute> {
+    let attribute = state.attribute(code, attribute).await;
+    Json(attribute)
 }
 
 #[axum::debug_handler]
