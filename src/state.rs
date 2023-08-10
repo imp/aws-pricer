@@ -21,12 +21,8 @@ impl State {
         }
     }
 
-    fn pricing(&self) -> &pricing::AwsPricingClient {
-        &self.client
-    }
-
     pub(crate) async fn services(&self) -> Vec<types::Service> {
-        self.pricing()
+        self.client
             .services()
             .await
             .into_iter()
@@ -35,12 +31,12 @@ impl State {
     }
 
     pub(crate) async fn service(&self, code: String) -> Option<types::Service> {
-        self.pricing().service(code).await.map(types::Service::from)
+        self.client.service(code).await.map(types::Service::from)
     }
 
     pub(crate) async fn attribute(&self, code: String, attribute: String) -> types::Attribute {
         let values = self
-            .pricing()
+            .client
             .attribute(code, attribute.clone())
             .await
             .into_iter()
@@ -54,7 +50,7 @@ impl State {
         code: String,
         attributes: HashMap<String, String>,
     ) -> Vec<json::Value> {
-        self.pricing().products(code, attributes).await
+        self.client.products(code, attributes).await
     }
 
     pub(crate) async fn codes(&self) -> json::Value {
