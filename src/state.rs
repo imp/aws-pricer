@@ -63,8 +63,14 @@ impl State {
     }
 
     pub(crate) async fn load_duration(&self) -> json::Value {
-        let duration = self.load_duration.lock().await;
-        json::to_value(&*duration).unwrap_or_default()
+        self.load_duration
+            .lock()
+            .await
+            .iter()
+            .map(|(code, duration)| json::json!({ code: format!("{duration:?}") }))
+            .collect::<Vec<_>>()
+            .into()
+        // json::to_value(&duration).unwrap_or_default()
     }
 
     async fn fill_attribute_values(&self, service: types::Service) -> types::Service {
