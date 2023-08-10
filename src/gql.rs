@@ -19,7 +19,7 @@ pub(crate) struct QueryRoot;
 impl QueryRoot {
     async fn service(&self, ctx: &Context<'_>) -> Vec<types::Service> {
         let state = ctx.data::<Arc<state::State>>().unwrap();
-        state.services().await
+        state.get_all_services().await
     }
 }
 

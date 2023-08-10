@@ -53,6 +53,10 @@ impl State {
         self.client.products(code, attributes).await
     }
 
+    pub(crate) async fn get_all_services(&self) -> Vec<types::Service> {
+        self.services.lock().await.values().cloned().collect()
+    }
+
     pub(crate) async fn codes(&self) -> json::Value {
         let services = self.services.lock().await;
         json::to_value(&*services).unwrap_or_default()
