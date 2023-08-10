@@ -103,6 +103,6 @@ async fn products(
     Path(code): Path<String>,
     Query(attributes): Query<HashMap<String, String>>,
 ) -> Json<Vec<json::Value>> {
-    let products = state.pricing().products(code, attributes).await;
+    let products = state.products(code, attributes).await;
     Json(products)
 }
