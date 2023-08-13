@@ -17,9 +17,13 @@ pub(crate) struct QueryRoot;
 
 #[Object]
 impl QueryRoot {
-    async fn service(&self, ctx: &Context<'_>) -> Vec<types::Service> {
+    async fn service(&self, ctx: &Context<'_>, code: Option<String>) -> Vec<types::Service> {
         let state = ctx.data::<Arc<state::State>>().unwrap();
-        state.get_all_services().await
+        if let Some(code) = code {
+            state.get_service(&code).await.into_iter().collect()
+        } else {
+            state.get_all_services().await
+        }
     }
 }
 

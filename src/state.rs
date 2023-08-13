@@ -57,6 +57,10 @@ impl State {
         self.services.lock().await.values().cloned().collect()
     }
 
+    pub(crate) async fn get_service(&self, code: &str) -> Option<types::Service> {
+        self.services.lock().await.get(code).cloned()
+    }
+
     pub(crate) async fn codes(&self) -> json::Value {
         let services = self.services.lock().await;
         json::to_value(&*services).unwrap_or_default()
