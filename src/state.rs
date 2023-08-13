@@ -70,7 +70,6 @@ impl State {
             .map(|(code, duration)| json::json!({ code: format!("{duration:?}") }))
             .collect::<Vec<_>>()
             .into()
-        // json::to_value(&duration).unwrap_or_default()
     }
 
     async fn fill_attribute_values(&self, service: types::Service) -> types::Service {
