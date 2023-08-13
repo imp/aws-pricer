@@ -7,17 +7,17 @@ use super::*;
 pub struct State {
     client: pricing::AwsPricingClient,
     services: Mutex<HashMap<String, types::Service>>,
-    load_duration: Mutex<HashMap<String, time::Duration>>,
+    load_stats: Mutex<HashMap<String, time::Duration>>,
 }
 
 impl State {
     pub async fn new(client: pricing::AwsPricingClient) -> Self {
         let services = Mutex::new(HashMap::new());
-        let load_duration = Mutex::new(HashMap::new());
+        let load_stats = Mutex::new(HashMap::new());
         Self {
             client,
             services,
-            load_duration,
+            load_stats,
         }
     }
 
@@ -62,8 +62,8 @@ impl State {
         json::to_value(&*services).unwrap_or_default()
     }
 
-    pub(crate) async fn load_duration(&self) -> json::Value {
-        self.load_duration
+    pub(crate) async fn stats(&self) -> json::Value {
+        self.load_stats
             .lock()
             .await
             .iter()
@@ -89,7 +89,7 @@ impl State {
         for service in self.services().await {
             let now = time::Instant::now();
             let service = self.fill_attribute_values(service).await;
-            self.load_duration
+            self.load_stats
                 .lock()
                 .await
                 .insert(service.code.clone(), now.elapsed());

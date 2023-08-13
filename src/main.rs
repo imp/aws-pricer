@@ -55,7 +55,7 @@ async fn index() -> impl IntoResponse {
 
 #[axum::debug_handler]
 async fn stats(State(state): State<Arc<state::State>>) -> Json<json::Value> {
-    Json(state.load_duration().await)
+    Json(state.stats().await)
 }
 
 #[axum::debug_handler]
