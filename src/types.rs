@@ -3,13 +3,13 @@ use aws_sdk_pricing as pricing;
 use super::*;
 
 #[derive(Clone, Debug, Serialize, Deserialize, async_graphql::SimpleObject)]
-pub(crate) struct Service {
+pub struct Service {
     pub(crate) code: String,
     pub(crate) attributes: Vec<Attribute>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, async_graphql::SimpleObject)]
-pub(crate) struct Attribute {
+pub struct Attribute {
     pub(crate) name: String,
     pub(crate) values: Vec<String>,
 }

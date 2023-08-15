@@ -23,7 +23,7 @@ async fn axum(
     #[shuttle_secrets::Secrets] shuttle_secrets: shuttle_secrets::SecretStore,
 ) -> shuttle_axum::ShuttleAxum {
     let pricing = pricing::AwsPricingClient::new(shuttle_secrets).await;
-    let state = state::State::new(pricing).await;
+    let state = state::State::new(pricing);
     let state = Arc::new(state);
     let load = state.clone();
     tokio::spawn(async move { load.load_services().await });

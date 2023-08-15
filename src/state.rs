@@ -11,7 +11,7 @@ pub struct State {
 }
 
 impl State {
-    pub async fn new(client: pricing::AwsPricingClient) -> Self {
+    pub fn new(client: pricing::AwsPricingClient) -> Self {
         let services = Mutex::new(HashMap::new());
         let load_stats = Mutex::new(HashMap::new());
         Self {
@@ -31,13 +31,19 @@ impl State {
     }
 
     pub(crate) async fn service(&self, code: String) -> Option<types::Service> {
-        self.client.service(code).await.map(types::Service::from)
+        self.client.service(&code).await.map(types::Service::from)
+    }
+
+    pub(crate) async fn load_service(&self, code: &str) -> Option<types::Service> {
+        let service = self.client.service(code).await?.into();
+        let service = self.fill_attribute_values(service).await;
+        Some(service)
     }
 
     pub(crate) async fn attribute(&self, code: String, attribute: String) -> types::Attribute {
         let values = self
             .client
-            .attribute(code, attribute.clone())
+            .attribute(&code, &attribute)
             .await
             .into_iter()
             .filter_map(|value| value.value)
@@ -50,7 +56,7 @@ impl State {
         code: String,
         attributes: HashMap<String, String>,
     ) -> Vec<json::Value> {
-        self.client.products(code, attributes).await
+        self.client.products(&code, attributes).await
     }
 
     pub(crate) async fn get_all_services(&self) -> Vec<types::Service> {

@@ -4,8 +4,9 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-async-graphql = "6.0"
+async-graphql = { version = "6.0", features = ["dataloader"] }
 async-graphql-axum = "6.0"
+async-trait = "0.1"
 aws-credential-types = "0.56"
 aws-types = "0.56"
 aws-config = "0.56"
